@@ -3,12 +3,13 @@ import 'package:shopping/constants/color_palette.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_font_icons/flutter_font_icons.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shopping/details/itemsDetails.dart';
 
 import '../cubit/shopping_cubit.dart';
 import '../cubit/shopping_state.dart';
 
 class BagsDetails extends StatefulWidget {
-  final imgPath, headerColor, shopName, aboutUs, shopCategory;
+  final imgPath, headerColor, shopName, aboutUs, shopCategory, index;
   double? rating;
 
   BagsDetails(
@@ -17,6 +18,7 @@ class BagsDetails extends StatefulWidget {
       this.shopName,
       this.rating,
       this.aboutUs,
+      this.index,
       this.shopCategory});
 
   @override
@@ -24,14 +26,19 @@ class BagsDetails extends StatefulWidget {
 }
 
 class _BagsDetailsState extends State<BagsDetails> {
+  String category = 'bags';
+  String username = 'walid barakat';
+
   @override
   Widget build(BuildContext context) {
     var screenHeight = MediaQuery.of(context).size.height;
     var screenWidth = MediaQuery.of(context).size.width;
 
     return BlocProvider(
-      create: (context) =>
-          ShoppingCubit()..getProducts(widget.shopName, widget.shopCategory),
+      create: (context) => ShoppingCubit()
+        ..getProducts(widget.shopName, widget.shopCategory)
+        ..CheckFollow(widget.shopName, category, username)
+        ..GetCountInCart(username),
       child: BlocConsumer<ShoppingCubit, ShoppingState>(
         listener: (context, state) {},
         builder: (context, state) {
@@ -105,6 +112,26 @@ class _BagsDetailsState extends State<BagsDetails> {
                     Feather.shopping_bag,
                     color: Colors.white,
                   )),
+                  Positioned(
+                      top: 40.0,
+                      right: 20.0,
+                      child: ShoppingCubit.get(context).CartItemsCount > 0
+                          ? Container(
+                        width: 15,
+                        height: 15,
+                        decoration: BoxDecoration(
+                            color: Colors.red, shape: BoxShape.circle),
+                        child: Center(
+                          child: Text(
+                            '${ShoppingCubit.get(context).CartItemsCount}',
+                            style:
+                            TextStyle(fontSize: 10, color: Colors.white),
+                          ),
+                        ),
+                      )
+                          : Container(
+                        child: Text(''),
+                      )),
               Positioned(
                   top: (screenHeight / 4 - 100.0),
                   left: screenWidth / 4,
@@ -200,10 +227,15 @@ class _BagsDetailsState extends State<BagsDetails> {
                             itemCount:
                                 ShoppingCubit.get(context).Products.length,
                             itemBuilder: (context, index) {
-                              return buildOneItem(
-                                  '${ShoppingCubit.get(context).Products[index].productPrice}',
-                                  '${ShoppingCubit.get(context).Products[index].productImage}',
-                                  '${ShoppingCubit.get(context).Products[index].productName}');
+                              return ItemsDetails(
+                                  imgpath:
+                                      '${ShoppingCubit.get(context).Products[index].productImage}',
+                                  desc:
+                                      '${ShoppingCubit.get(context).Products[index].productName}',
+                                  price:
+                                      '${ShoppingCubit.get(context).Products[index].productPrice}',
+                                  category: category,
+                                  shopName: widget.shopName);
                             },
                             separatorBuilder:
                                 (BuildContext context, int index) => SizedBox(
@@ -212,29 +244,60 @@ class _BagsDetailsState extends State<BagsDetails> {
                           ),
                         ),
                         Row(children: [
-                          Container(
-                              height: 50.0,
-                              width: 225.0,
-                              decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(10.0),
-                                  color: ColorPalette().buttonColor),
-                              child: Center(
-                                  child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                    Icon(
-                                      Icons.favorite,
-                                      size: 35.0,
-                                      color: Colors.white,
-                                    ),
-                                    SizedBox(width: 15.0),
-                                    Text(
-                                      'Follow',
-                                      style: GoogleFonts.bigShouldersText(
-                                          color: Colors.white, fontSize: 25.0),
-                                    )
-                                  ]))),
+                          GestureDetector(
+                            onTap: () async {
+                              await ShoppingCubit.get(context).ToggleFollow(
+                                  widget.index,
+                                  widget.shopName,
+                                  category,
+                                  username);
+                            },
+                            child: Container(
+                                height: 50.0,
+                                width: 225.0,
+                                decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(10.0),
+                                    color: ColorPalette().buttonColor),
+                                child: Center(
+                                    child: ShoppingCubit.get(context)
+                                            .ifFollower!
+                                        ? Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                                Icon(
+                                                  Icons.check,
+                                                  size: 25.0,
+                                                  color: Colors.white,
+                                                ),
+                                                SizedBox(width: 5.0),
+                                                Text(
+                                                  'Followed',
+                                                  style: GoogleFonts
+                                                      .bigShouldersText(
+                                                          color: Colors.white,
+                                                          fontSize: 25.0),
+                                                )
+                                              ])
+                                        : Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                                Icon(
+                                                  Icons.favorite,
+                                                  size: 25.0,
+                                                  color: Colors.white,
+                                                ),
+                                                SizedBox(width: 5.0),
+                                                Text(
+                                                  'Follow',
+                                                  style: GoogleFonts
+                                                      .bigShouldersText(
+                                                          color: Colors.white,
+                                                          fontSize: 25.0),
+                                                )
+                                              ]))),
+                          ),
                           SizedBox(width: 25.0),
                           Container(
                               height: 50.0,
@@ -253,78 +316,5 @@ class _BagsDetailsState extends State<BagsDetails> {
         },
       ),
     );
-  }
-
-  buildOneItem(price, imgpath, desc) {
-    return Stack(children: [
-      Container(height: 125.0, width: 200.0, color: Colors.transparent),
-      Positioned(
-        top: 50.0,
-        child: Container(
-          height: 75.0,
-          width: 200.0,
-          decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(15.0),
-              boxShadow: [
-                BoxShadow(
-                    blurRadius: 4.0,
-                    spreadRadius: 2.0,
-                    color: Colors.grey.withOpacity(0.2))
-              ],
-              color: Colors.white),
-        ),
-      ),
-      Positioned(
-          top: 105,
-          left: 110,
-          child: GestureDetector(
-              onTap: () {},
-              child: Container(
-                  width: 75.0,
-                  height: 30.0,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(7.0),
-                    color: ColorPalette().buttonColor,
-                  ),
-                  child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.add,
-                          size: 17.0,
-                          color: Colors.white,
-                        ),
-                        SizedBox(width: 5.0),
-                        Text(
-                          'Add',
-                          style: GoogleFonts.bigShouldersText(
-                              color: Colors.white, fontSize: 15.0),
-                        )
-                      ])))),
-      Positioned(
-          right: 5.0,
-          child: Container(
-              height: 100.0,
-              width: 100.0,
-              decoration: BoxDecoration(
-                  image: DecorationImage(
-                      image: NetworkImage(imgpath), fit: BoxFit.scaleDown)))),
-      Positioned(
-          left: 10.0,
-          top: 60.0,
-          child:
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(
-              price,
-              style: GoogleFonts.bigShouldersText(
-                  color: ColorPalette().firstSlice, fontSize: 25.0),
-            ),
-            Text(
-              desc,
-              style: GoogleFonts.bigShouldersText(
-                  color: Color(0xFF23163D), fontSize: 20.0),
-            )
-          ]))
-    ]);
   }
 }

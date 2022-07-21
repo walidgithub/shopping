@@ -17,7 +17,7 @@ class AddItem extends StatefulWidget {
 
 class _AddItemState extends State<AddItem> {
   TextEditingController shopNameController = TextEditingController();
-  // TextEditingController productCategoryController = TextEditingController();
+  TextEditingController productCategoryController = TextEditingController();
   TextEditingController productDescController = TextEditingController();
   TextEditingController productPriceController = TextEditingController();
 
@@ -90,8 +90,8 @@ class _AddItemState extends State<AddItem> {
                       height: 50.0,
                       width: screenWidth - 20,
                       child: TextFormField(
-                        controller: TextEditingController(text: 'bags'),
-                        readOnly: true,
+                        controller: productCategoryController,
+                        // readOnly: true,
                         decoration: InputDecoration(
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(5.0),
@@ -101,6 +101,7 @@ class _AddItemState extends State<AddItem> {
                             contentPadding:
                                 EdgeInsets.only(top: 10.0, left: 10.0),
                             hintText: 'Product Category....',
+                            labelText: 'bags or shoes or shirts or accessory or jeans',
                             hintStyle: GoogleFonts.bigShouldersText(
                                 color: Color(0xFF97A9AC), fontSize: 20.0)),
                       ),
@@ -152,7 +153,7 @@ class _AddItemState extends State<AddItem> {
                     ),
                     ElevatedButton(
                         onPressed: () async {
-                          Cubit.Image();
+                         await Cubit.Image();
                         },
                         style: ElevatedButton.styleFrom(
                           primary: ColorPalette().buttonColor,
@@ -227,11 +228,12 @@ class _AddItemState extends State<AddItem> {
                         shopNameController.text,
                         productDescController.text,
                         productPriceController.text,
-                        'bags');
+                        productCategoryController.text);
                     loading = true;
                     shopNameController.clear();
                     productDescController.clear();
                     productPriceController.clear();
+                    productCategoryController.clear();
                   },
                   style: ElevatedButton.styleFrom(
                     primary: ColorPalette().buttonColor,

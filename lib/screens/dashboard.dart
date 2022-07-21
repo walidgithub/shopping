@@ -1,4 +1,7 @@
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shopping/constants/color_palette.dart';
+import 'package:shopping/cubit/shopping_cubit.dart';
+import 'package:shopping/cubit/shopping_state.dart';
 import 'package:shopping/screens/nav_bar.dart';
 import 'package:shopping/screens/shirts.dart';
 import 'package:shopping/screens/accessories.dart';
@@ -19,92 +22,129 @@ class _DashboardPageState extends State<DashboardPage> {
 
   var _selectedOption = 0;
 
-  List allOptions = [Jeans(), Bags(), Shoes(), Accessories(), Shirts()];
+  List allOptions = [Jeans(), Bags(), Shoes(), Accessory(), Shirts()];
 
   List isSelected = [true, false, false, false, false];
 
   var scaffoldKey = GlobalKey<ScaffoldState>();
+
+  String username = 'walid barakat';
 
   @override
   Widget build(BuildContext context) {
     var screenHeight = MediaQuery.of(context).size.height;
     var screenWidth = MediaQuery.of(context).size.width;
 
-    return SafeArea(
-      child: Scaffold(
-          key: scaffoldKey,
-          drawer: NavBar(),
-          body: Stack(
-            children: [
-              Container(
-                  height: screenHeight,
-                  width: screenWidth,
-                  color: Colors.transparent),
-              Container(
-                  height: screenHeight,
-                  width: screenWidth / 5,
-                  color: Color(0xFFBADDFA)),
-              Positioned(
-                  left: screenWidth / 5,
-                  child: Container(
-                    height: screenHeight,
-                    width: screenWidth - (screenWidth / 5),
-                    color: Colors.white,
-                  )),
-              Positioned(
-                  top: 20.0,
-                  left: 20.0,
-                  child: GestureDetector(
-                      onTap: () {
-                        scaffoldKey.currentState?.openDrawer();
-                      },
-                      child: Icon(Feather.menu))),
-              Positioned(
-                  top: 20.0, right: 20.0, child: Icon(Feather.shopping_bag)),
-              Positioned(
-                  top: screenHeight - (screenHeight - 60.0),
-                  left: (screenWidth / 5) + 25.0,
-                  child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Shopping',
-                            style: GoogleFonts.bigShouldersText(
-                                color: Color(0xFF23163D), fontSize: 40.0)),
-                        SizedBox(height: 10.0),
-                        Text('Best place for shopping',
-                            style: GoogleFonts.bigShouldersText(
-                                color: Color(0xFFA59FB0), fontSize: 20.0)),
-                        SizedBox(height: 15.0),
-                        Container(
-                          height: 50.0,
-                          width: 225.0,
-                          child: TextFormField(
-                            decoration: InputDecoration(
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(5.0),
-                                  borderSide: BorderSide(
-                                      color: Colors.grey.withOpacity(0.4)),
+    return BlocProvider(
+      create: (context) => ShoppingCubit()..GetCountInCart(username),
+      child: BlocConsumer<ShoppingCubit, ShoppingState>(
+        listener: (context, state) {},
+        builder: (context, state) {
+          return SafeArea(
+            child: Scaffold(
+                key: scaffoldKey,
+                drawer: NavBar(),
+                body: Stack(
+                  children: [
+                    Container(
+                        height: screenHeight,
+                        width: screenWidth,
+                        color: Colors.transparent),
+                    Container(
+                        height: screenHeight,
+                        width: screenWidth / 5,
+                        color: Color(0xFFBADDFA)),
+                    Positioned(
+                        left: screenWidth / 5,
+                        child: Container(
+                          height: screenHeight,
+                          width: screenWidth - (screenWidth / 5),
+                          color: Colors.white,
+                        )),
+                    Positioned(
+                        top: 20.0,
+                        left: 20.0,
+                        child: GestureDetector(
+                            onTap: () {
+                              scaffoldKey.currentState?.openDrawer();
+                            },
+                            child: Icon(Feather.menu))),
+                    Positioned(
+                        top: 20.0,
+                        right: 20.0,
+                        child: Icon(Feather.shopping_bag)),
+                    Positioned(
+                        top: 40.0,
+                        right: 20.0,
+                        child: ShoppingCubit.get(context).CartItemsCount > 0
+                            ? Container(
+                                width: 15,
+                                height: 15,
+                                decoration: BoxDecoration(
+                                    color: Colors.red, shape: BoxShape.circle),
+                                child: Center(
+                                  child: Text(
+                                    '${ShoppingCubit.get(context).CartItemsCount}',
+                                    style: TextStyle(
+                                        fontSize: 10, color: Colors.white),
+                                  ),
                                 ),
-                                contentPadding:
-                                    EdgeInsets.only(top: 10.0, left: 10.0),
-                                hintText: 'search...',
-                                hintStyle: GoogleFonts.bigShouldersText(
-                                    color: Color(0xFF97A9AC), fontSize: 20.0),
-                                suffixIcon: Icon(Icons.search,
-                                    color: Colors.grey.withOpacity(0.4))),
-                          ),
-                        )
-                      ])),
-              buildSideNavigator(),
-              Positioned(
-                  top: (screenHeight / 3) - 35.0,
-                  left: (screenWidth / 5) + 25.0,
-                  child: Container(
-                      height: screenHeight - ((screenHeight / 3) + 5.0),
-                      width: screenWidth - ((screenWidth / 5) + 40.0),
-                      child: allOptions[_selectedOption]))
-            ],
-          )),
+                              )
+                            : Container(
+                                child: Text(''),
+                              )),
+                    Positioned(
+                        top: screenHeight - (screenHeight - 60.0),
+                        left: (screenWidth / 5) + 25.0,
+                        child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Shopping',
+                                  style: GoogleFonts.bigShouldersText(
+                                      color: Color(0xFF23163D),
+                                      fontSize: 40.0)),
+                              SizedBox(height: 10.0),
+                              Text('Best place for shopping',
+                                  style: GoogleFonts.bigShouldersText(
+                                      color: Color(0xFFA59FB0),
+                                      fontSize: 20.0)),
+                              SizedBox(height: 15.0),
+                              Container(
+                                height: 50.0,
+                                width: 225.0,
+                                child: TextFormField(
+                                  decoration: InputDecoration(
+                                      border: OutlineInputBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(5.0),
+                                        borderSide: BorderSide(
+                                            color:
+                                                Colors.grey.withOpacity(0.4)),
+                                      ),
+                                      contentPadding: EdgeInsets.only(
+                                          top: 10.0, left: 10.0),
+                                      hintText: 'search...',
+                                      hintStyle: GoogleFonts.bigShouldersText(
+                                          color: Color(0xFF97A9AC),
+                                          fontSize: 20.0),
+                                      suffixIcon: Icon(Icons.search,
+                                          color: Colors.grey.withOpacity(0.4))),
+                                ),
+                              )
+                            ])),
+                    buildSideNavigator(),
+                    Positioned(
+                        top: (screenHeight / 3) - 35.0,
+                        left: (screenWidth / 5) + 25.0,
+                        child: Container(
+                            height: screenHeight - ((screenHeight / 3) + 5.0),
+                            width: screenWidth - ((screenWidth / 5) + 40.0),
+                            child: allOptions[_selectedOption]))
+                  ],
+                )),
+          );
+        },
+      ),
     );
   }
 

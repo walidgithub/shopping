@@ -7,7 +7,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shopping/cubit/shopping_state.dart';
 
-import '../models/ShopModel.dart';
+import '../models/CartModel.dart';
+import '../models/ProductModel.dart';
+import '../models/ShopFollowerModel.dart';
 
 class ShoppingCubit extends Cubit<ShoppingState> {
   ShoppingCubit() : super(ShoppingInitial());
@@ -17,9 +19,21 @@ class ShoppingCubit extends Cubit<ShoppingState> {
 
   FirebaseStorage storage = FirebaseStorage.instance;
 
-  ShopModel shopModel = ShopModel();
+  ProductModel productModel = ProductModel();
 
-  List<ShopModel> Products = [];
+  // ShopFollowerModel shopFollowerModel = ShopFollowerModel();
+
+  List<ProductModel> Products = [];
+
+  List<ShopFollowerModel> AllFollowers = [];
+
+  List<CartModel> AllCarts = [];
+
+  bool? ifFollower = false;
+
+  bool? inTheCart = false;
+
+  int CartItemsCount = 0;
 
   ImagePicker imagePicker = ImagePicker();
   XFile? PImage;
@@ -29,9 +43,10 @@ class ShoppingCubit extends Cubit<ShoppingState> {
     return PImage?.readAsBytes();
   }
 
+// Add Product ***********************
   addProduct(String shopName, String productName, String productPrice,
       String productCategory) async {
-    ShopModel shopModel = ShopModel(
+    ProductModel productModel = ProductModel(
         shopName: shopName,
         productName: productName,
         productPrice: productPrice,
@@ -42,15 +57,15 @@ class ShoppingCubit extends Cubit<ShoppingState> {
     await storage
         .ref()
         .child("photos/")
-        .child('${shopModel.shopName}${shopModel.productName}.jpg')
+        .child('${productModel.shopName}${productModel.productName}.jpg')
         .putFile(File(PImage!.path));
-    shopModel.productImage = await storage
+    productModel.productImage = await storage
         .ref()
         .child("photos/")
-        .child('${shopModel.shopName}${shopModel.productName}.jpg')
+        .child('${productModel.shopName}${productModel.productName}.jpg')
         .getDownloadURL();
 
-    await firestore.collection('product').doc().set(shopModel.toJson());
+    await firestore.collection('product').doc().set(productModel.toJson());
 
     emit(AddProductState());
   }
@@ -65,9 +80,153 @@ class ShoppingCubit extends Cubit<ShoppingState> {
         .get();
 
     docs.docs.forEach((element) {
-      Products.add(ShopModel.fromJson(element.data()));
+      Products.add(ProductModel.fromJson(element.data()));
       // print(Products.length);
     });
     emit(GetProductsState());
+  }
+
+  // Follow **************
+  addFollow(
+      String id, String shopName, String shopCategory, String follower) async {
+    ShopFollowerModel shopFollowerModel = ShopFollowerModel(
+        id: id,
+        shopName: shopName,
+        shopCategory: shopCategory,
+        follower: follower);
+
+    await firestore
+        .collection('shopfollower')
+        .doc()
+        .set(shopFollowerModel.toJson());
+
+    emit(AddFollowState());
+  }
+
+  CheckFollow(String shopName, String shopCategory, String follower) async {
+    AllFollowers = [];
+    var docs = await firestore
+        .collection('shopfollower')
+        .where('shopName', isEqualTo: shopName)
+        .where('shopCategory', isEqualTo: shopCategory)
+        .where('follower', isEqualTo: follower)
+        .get();
+
+    //check if found
+    docs.docs.forEach((element) {
+      AllFollowers.add(ShopFollowerModel.fromJson(element.data()));
+    });
+
+    if (AllFollowers.length > 0) {
+      ifFollower = true;
+    } else {
+      ifFollower = false;
+    }
+
+    emit(CheckFollowState());
+  }
+
+  ToggleFollow(
+      String id, String shopName, String shopCategory, String follower) async {
+    CheckFollow(shopName, shopCategory, follower);
+
+    if (ifFollower!) {
+      await firestore
+          .collection('shopfollower')
+          .where('id', isEqualTo: id)
+          .get()
+          .then((snapshot) {
+        for (DocumentSnapshot ds in snapshot.docs) {
+          ds.reference.delete();
+        }
+      });
+      ifFollower = false;
+    } else {
+      addFollow(id, shopName, shopCategory, follower);
+      ifFollower = true;
+    }
+
+    emit(ToggleFollowState());
+  }
+
+//Add to cart  *******************
+
+  addToCart(String shopName, String productName, String productPrice,
+      String productCategory, String productImage, String userName) async {
+    CartModel cartModel = CartModel(
+        shopName: shopName,
+        productName: productName,
+        productPrice: productPrice,
+        productCategory: productCategory,
+        productImage: productImage,
+        userName: userName);
+
+    await firestore.collection('cart').doc().set(cartModel.toJson());
+
+    emit(AddToCartState());
+  }
+
+  CheckAddToCart(String shopName, String productName, String productCategory,
+      String userName) async {
+    AllCarts = [];
+    var docs = await firestore
+        .collection('cart')
+        .where('shopName', isEqualTo: shopName)
+        .where('productName', isEqualTo: productName)
+        .where('productCategory', isEqualTo: productCategory)
+        .where('userName', isEqualTo: userName)
+        .get();
+
+    //check if found
+    docs.docs.forEach((element) {
+      AllCarts.add(CartModel.fromJson(element.data()));
+    });
+
+    if (AllCarts.length > 0) {
+      inTheCart = true;
+    } else {
+      inTheCart = false;
+    }
+
+    emit(CheckAddToCartState());
+  }
+
+  ToggleAddToCart(String shopName, String productName, String productPrice,
+      String productCategory, String productImage, String userName) async {
+    CheckAddToCart(shopName, productName, productCategory, userName);
+
+    if (inTheCart!) {
+      await firestore
+          .collection('cart')
+          .where('userName', isEqualTo: userName)
+          .where('productName', isEqualTo: productName)
+          .where('shopName', isEqualTo: shopName)
+          .where('productCategory', isEqualTo: productCategory)
+          .get()
+          .then((snapshot) {
+        for (DocumentSnapshot ds in snapshot.docs) {
+          ds.reference.delete();
+        }
+      });
+      inTheCart = false;
+    } else {
+      addToCart(shopName, productName, productPrice, productCategory,
+          productImage, userName);
+      inTheCart = true;
+    }
+
+    emit(ToggleAddToCartState());
+  }
+
+  GetCountInCart(String userName) async {
+    await firestore
+        .collection('cart')
+        .where('userName', isEqualTo: userName)
+        .get()
+        .then((snapshot) {
+      CartItemsCount = snapshot.docs.length;
+    });
+
+    emit(CountInCartState());
   }
 }
